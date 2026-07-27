@@ -5,14 +5,16 @@ function BreastDiagram({ breast, points, onCanvasClick, onPointClick, onPointHov
 
   const isLeft = breast === 'left';
   const label = isLeft ? 'IZQUIERDO' : 'DERECHO';
-  // Schematic front-view breast — round oval shape, natural proportions
-  const viewBox = [0, 0, 200, 200];
-  // Areola / nipple position (slightly below center)
-  const nippleX = 100;
-  const nippleY = 90;
+  const viewBox = [0, 0, 200, 230];
 
-  // Symmetrical rounded oval — wider at top, gently curved bottom
-  const breastPath = 'M28,48 C28,12 172,12 172,48 C172,122 156,178 100,178 C44,178 28,122 28,48Z';
+  // Círculo perfecto centrado en (105, 100) r≈83, luego estirado en punta superior izquierda/derecha → gota
+  const breastPath = isLeft
+    ? 'M75,10 C110,10 151,54 188,100 C188,146 151,183 105,183 C59,183 22,146 22,100 C22,54 42,24 75,10Z'
+    : 'M125,10 C90,10 49,54 12,100 C12,146 49,183 105,183 C141,183 178,146 178,100 C178,54 158,24 125,10Z';
+
+  // Areola / nipple — centred in the breast
+  const nippleX = isLeft ? 105 : 95;
+  const nippleY = 100;
 
   const handleClick = (e) => {
     if (!svgRef.current) return;
@@ -43,23 +45,30 @@ function BreastDiagram({ breast, points, onCanvasClick, onPointClick, onPointHov
         {/* Background */}
         <rect x="0" y="0" width={viewBox[2]} height={viewBox[3]} fill="var(--bg-card)" rx="12" />
 
-        {/* Breast outline with visible fill + shadow */}
-        <path
-          d={breastPath}
-          fill="var(--cream)"
-          stroke="var(--pink-light)"
-          strokeWidth="2.5"
-          filter={`url(#shadow-${breast})`}
-        />
+        {/* Rotated breast shape group (path + areola + nipple) */}
+        <g transform={`rotate(${isLeft ? -30 : 30}, ${nippleX}, ${nippleY})`}>
+          {/* Breast outline with visible fill + shadow */}
+          <path
+            d={breastPath}
+            fill="var(--cream)"
+            stroke="var(--pink-light)"
+            strokeWidth="2.5"
+            filter={`url(#shadow-${breast})`}
+          />
 
-        {/* Areola */}
-        <ellipse cx={nippleX} cy={nippleY} rx="18" ry="14" fill="var(--pink-light)" opacity="0.5" />
+          {/* Areola — perfect circle, pencil-like stroke */}
+          <circle
+            cx={nippleX} cy={nippleY} r="44"
+            fill="var(--pink-light)" fillOpacity="0.35"
+            stroke="var(--pink-light)" strokeWidth="1.5"
+          />
 
-        {/* Nipple */}
-        <circle cx={nippleX} cy={nippleY} r="5" fill="var(--pink)" />
+          {/* Nipple */}
+          <circle cx={nippleX} cy={nippleY} r="10" fill="var(--pink)" />
+        </g>
 
         {/* Side label */}
-        <text x={viewBox[2] / 2} y="192" textAnchor="middle" fontSize="9" fill="var(--text-muted)" fontWeight="600">
+        <text x={viewBox[2] / 2} y={viewBox[3] - 10} textAnchor="middle" fontSize="9" fill="var(--text-muted)" fontWeight="600">
           {label}
         </text>
 

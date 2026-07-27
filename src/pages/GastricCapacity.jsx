@@ -283,7 +283,7 @@ function GastricCapacity() {
 
             <button
               type="button"
-              className="btn btn-outline-secondary w-100 mt-2"
+              className="btn btn-clean w-100 mt-2"
               onClick={handleReset}
             >
               Limpiar
@@ -455,16 +455,6 @@ function GastricCapacity() {
       />
 
       <style>{`
-        .gc-card .btn-outline-secondary {
-          border-color: #e0e0e0;
-          color: var(--text-body);
-          border-radius: var(--radius-full);
-        }
-        .gc-card .btn-outline-secondary:hover {
-          color: var(--text-body) !important;
-          background: var(--cream) !important;
-          border-color: #d0d0d0 !important;
-        }
         .demo-badge {
           background: #EDD5D9;
           cursor: pointer;

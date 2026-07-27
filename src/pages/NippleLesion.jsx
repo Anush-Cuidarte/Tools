@@ -347,9 +347,8 @@ function NippleLesion() {
               {hasPoints && (
                 <button
                   type="button"
-                  className="btn btn-outline-secondary w-100 mt-3"
+                  className="btn btn-clean w-100 mt-3"
                   onClick={reset}
-                  style={{ borderColor: '#e0e0e0', color: 'var(--text-body)', borderRadius: 'var(--radius-full)' }}
                 >
                   <i className="bi bi-arrow-counterclockwise me-2"></i>
                   Limpiar todo

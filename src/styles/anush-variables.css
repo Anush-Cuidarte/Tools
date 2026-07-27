@@ -125,3 +125,15 @@
   padding: 6px 14px !important;
   font-weight: 600 !important;
 }
+
+/* ========== BOTÓN LIMPIAR (compartido entre herramientas) ========== */
+.btn-clean {
+  border-color: #e0e0e0 !important;
+  color: var(--text-body) !important;
+  border-radius: var(--radius-full) !important;
+}
+.btn-clean:hover {
+  color: var(--text-body) !important;
+  background: var(--cream) !important;
+  border-color: #d0d0d0 !important;
+}

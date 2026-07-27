@@ -185,7 +185,7 @@ function GastricCapacity() {
       <div className="row g-4">
         {/* === FORMULARIO === */}
         <div className="col-12 col-lg-5">
-          <div className="card p-4 h-100">
+          <div className="card p-4 h-100 gc-card">
             <h5 className="fw-bold mb-3" style={{ color: 'var(--text-dark)' }}>Datos del bebé</h5>
 
             <div className="mb-3">
@@ -283,7 +283,7 @@ function GastricCapacity() {
 
             <button
               type="button"
-              className="btn btn-outline-secondary w-100 mt-2 btn-limpiar"
+              className="btn btn-outline-secondary w-100 mt-2"
               onClick={handleReset}
             >
               Limpiar
@@ -455,12 +455,12 @@ function GastricCapacity() {
       />
 
       <style>{`
-        .btn-limpiar {
+        .gc-card .btn-outline-secondary {
           border-color: #e0e0e0;
           color: var(--text-body);
           border-radius: var(--radius-full);
         }
-        .btn-limpiar:hover {
+        .gc-card .btn-outline-secondary:hover {
           color: var(--text-body) !important;
           background: var(--cream) !important;
           border-color: #d0d0d0 !important;

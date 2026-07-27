@@ -118,7 +118,6 @@ function GrowthCharts() {
   const [newDate, setNewDate] = useState('');
   const [newWeight, setNewWeight] = useState('');
   const [showDemoInfo, setShowDemoInfo] = useState(false);
-  const { exportToPng } = useExport();
   const { user } = useAuth();
   const demo = useContext(DemoContext);
   const isDemo = !user && !!demo;

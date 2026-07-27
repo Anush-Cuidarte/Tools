@@ -1,1 +1,1 @@
-if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/anush_cuidarte_tools/sw.js', { scope: '/anush_cuidarte_tools/' })})}
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/Tools/sw.js', { scope: '/Tools/' })})}

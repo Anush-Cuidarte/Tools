@@ -14,6 +14,13 @@ const tools = [
     color: 'green',
   },
   {
+    slug: 'nipple-lesion',
+    title: 'Registro de Lesiones en Pezón',
+    description: 'Marcá y documentá lesiones en el pezón/areola sobre diagramas interactivos con fotos y descripciones.',
+    icon: 'bi-pin-map',
+    color: 'pink',
+  },
+  {
     slug: 'e-lactancia',
     title: 'Buscar en e-lactancia',
     description: 'Consultá la compatibilidad de medicamentos, plantas y otros productos con la lactancia.',

@@ -1,6 +1,10 @@
-import { useRef } from 'react';
+import { useRef, useContext, useEffect, useState } from 'react';
 import useGastricCalc from '../hooks/useGastricCalc';
+import UpgradeModal from '../components/UpgradeModal';
 import useExport from '../hooks/useExport';
+import { useAuth } from '../services/auth';
+import { DemoContext } from '../services/demo';
+import api from '../services/api';
 
 function ResultCard({ label, value, unit, color, big }) {
   return (
@@ -102,15 +106,44 @@ function GastricCapacity() {
   } = useGastricCalc();
 
   const resultsRef = useRef(null);
+  const prevHadResultsRef = useRef(false);
   const { exportToPng } = useExport();
+  const { user } = useAuth();
+  const demo = useContext(DemoContext);
+  const isDemo = !user && !!demo;
+  const [showDemoInfo, setShowDemoInfo] = useState(false);
+  const [blockCalcs, setBlockCalcs] = useState(false);
 
-  const handleExport = () => {
-    if (resultsRef.current) {
-      exportToPng(resultsRef.current, 'resumen-capacidad-gastrica');
+  // ── Consume calculation when resultados first appear ──
+  const hasResults = resultados !== null;
+  const showResults = hasResults && !blockCalcs;
+  useEffect(() => {
+    if (hasResults && !prevHadResultsRef.current) {
+      if (isDemo && demo) {
+        const allowed = demo.consumeCalculation('gastric-capacity');
+        if (!allowed) {
+          setBlockCalcs(true);
+        }
+      }
     }
+    prevHadResultsRef.current = hasResults;
+  }, [hasResults, isDemo, demo]);
+
+  const handleReset = () => {
+    reset();
+    setBlockCalcs(false);
   };
 
-  const hasResults = resultados !== null;
+  const handleExport = async () => {
+    if (isDemo && demo && !demo.consumeExport('gastric-capacity')) {
+      return;
+    }
+    const exportOpts = isDemo ? { demo: true, anonymousId: demo?.deviceId } : {};
+    api.registrarExport('gastric-capacity', exportOpts).catch(() => {});
+    if (resultsRef.current) {
+      exportToPng(resultsRef.current, isDemo ? 'resumen-capacidad-gastrica-demo' : 'resumen-capacidad-gastrica');
+    }
+  };
 
   return (
     <div className="container" style={{ maxWidth: 'var(--max-width)' }}>
@@ -122,6 +155,23 @@ function GastricCapacity() {
           <p className="text-muted mb-4" style={{ fontSize: '0.95rem', maxWidth: 600 }}>
             Calculá la capacidad gástrica de tu bebé y la distribución entre leche materna y fórmula según sus pesos y tomas diarias.
           </p>
+
+          {isDemo && demo && (
+            <div
+              className="d-inline-flex align-items-center gap-2 mb-4 px-3 py-2 rounded-pill demo-badge"
+              onClick={() => setShowDemoInfo(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter') setShowDemoInfo(true); }}
+            >
+              <i className="bi bi-info-circle" style={{ color: 'var(--pink)' }}></i>
+              <span className="text-muted">
+                Modo demo — te quedan{' '}
+                <strong>{demo.calcsRemaining} cálculos</strong> y{' '}
+                <strong>{demo.exportsRemaining} exportaciones</strong>
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -227,7 +277,7 @@ function GastricCapacity() {
             <button
               type="button"
               className="btn btn-outline-secondary w-100 mt-2"
-              onClick={reset}
+              onClick={handleReset}
               style={{ borderColor: '#e0e0e0', color: 'var(--text-body)', borderRadius: 'var(--radius-full)' }}
             >
               Limpiar
@@ -238,7 +288,7 @@ function GastricCapacity() {
         {/* === RESULTADOS === */}
         <div className="col-12 col-lg-7">
           <div ref={resultsRef}>
-            {!hasResults ? (
+            {!showResults ? (
               <div className="card p-5 text-center h-100 d-flex align-items-center justify-content-center">
                 <i className="bi bi-calculator" style={{ fontSize: '3rem', color: 'var(--cream)', marginBottom: '1rem' }}></i>
                 <p className="text-muted mb-0">
@@ -367,7 +417,7 @@ function GastricCapacity() {
           </div>
 
           {/* Botón exportar */}
-          {hasResults && (
+          {showResults && (
             <div className="mt-3 text-end">
               <button
                 type="button"
@@ -381,6 +431,34 @@ function GastricCapacity() {
           )}
         </div>
       </div>
+
+      {/* Upgrade Modal — límite alcanzado */}
+      {isDemo && demo && (
+        <UpgradeModal
+          show={demo.showUpgrade}
+          blockedAction={demo.blockedAction}
+          onClose={() => demo.setShowUpgrade(false)}
+        />
+      )}
+
+      {/* Demo Info Modal — al clickear el badge */}
+      <UpgradeModal
+        show={showDemoInfo}
+        onClose={() => setShowDemoInfo(false)}
+        title="Estás usando la versión demo"
+      />
+
+      <style>{`
+        .demo-badge {
+          background: #EDD5D9;
+          cursor: pointer;
+          transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .demo-badge:hover {
+          box-shadow: var(--shadow-sm);
+          transform: translateY(-1px);
+        }
+      `}</style>
     </div>
   );
 }

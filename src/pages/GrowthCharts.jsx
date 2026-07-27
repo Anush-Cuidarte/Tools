@@ -1,11 +1,15 @@
-import { useState, useRef, useMemo, useCallback } from 'react';
+import { useState, useRef, useMemo, useCallback, useContext } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import {
   whoBoysWeight, whoGirlsWeight, PERCENTILE_LABELS, estimatePercentile,
 } from '../data/who-growth';
+import UpgradeModal from '../components/UpgradeModal';
 import useExport from '../hooks/useExport';
+import { useAuth } from '../services/auth';
+import { DemoContext } from '../services/demo';
+import api from '../services/api';
 
 const GENDER_OPTIONS = [
   { value: 'boy', label: 'Niño', icon: 'bi-gender-male' },
@@ -90,7 +94,11 @@ function GrowthCharts() {
   const [newMonth, setNewMonth] = useState('');
   const [newDay, setNewDay] = useState('');
   const [newWeight, setNewWeight] = useState('');
+  const [showDemoInfo, setShowDemoInfo] = useState(false);
   const { exportToPng } = useExport();
+  const { user } = useAuth();
+  const demo = useContext(DemoContext);
+  const isDemo = !user && !!demo;
 
   // Build chart data: base percentile rows + baby measurement rows
   const chartData = useMemo(() => {
@@ -99,7 +107,6 @@ function GrowthCharts() {
 
     measurements.forEach(m => {
       const age = m.month + (m.day || 0) / 30;
-      // If age matches an existing integer row, set babyWeight there
       const existing = data.find(d => Math.abs(d.month - age) < 0.001);
       if (existing) {
         existing.babyWeight = m.weight;
@@ -112,6 +119,10 @@ function GrowthCharts() {
   }, [gender, measurements]);
 
   const addMeasurement = () => {
+    if (isDemo && demo && !demo.consumeCalculation('growth-charts')) {
+      return;
+    }
+
     const month = parseInt(newMonth, 10) || 0;
     const day = parseInt(newDay, 10) || 0;
     const weight = parseFloat(newWeight);
@@ -134,10 +145,15 @@ function GrowthCharts() {
     setMeasurements(prev => prev.filter(m => m.id !== id));
   }, []);
 
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
+    if (isDemo && demo && !demo.consumeExport('growth-charts')) {
+      return;
+    }
+    const exportOpts = isDemo ? { demo: true, anonymousId: demo?.deviceId } : {};
+    api.registrarExport('growth-charts', exportOpts).catch(() => {});
     const el = document.getElementById('growth-chart-card');
-    if (el) exportToPng(el, 'curvas-crecimiento');
-  }, [exportToPng]);
+    if (el) exportToPng(el, isDemo ? 'curvas-crecimiento-demo' : 'curvas-crecimiento');
+  }, [exportToPng, isDemo, demo]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') addMeasurement();
@@ -157,6 +173,23 @@ function GrowthCharts() {
           <p className="text-muted mb-4" style={{ fontSize: '0.95rem', maxWidth: 600 }}>
             Visualizá las curvas percentilares OMS y registrá las mediciones de peso de tu bebé.
           </p>
+
+          {isDemo && demo && (
+            <div
+              className="d-inline-flex align-items-center gap-2 mb-4 px-3 py-2 rounded-pill demo-badge"
+              onClick={() => setShowDemoInfo(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter') setShowDemoInfo(true); }}
+            >
+              <i className="bi bi-info-circle" style={{ color: 'var(--pink)' }}></i>
+              <span className="text-muted">
+                Modo demo — te quedan{' '}
+                <strong>{demo.calcsRemaining} cálculos</strong> y{' '}
+                <strong>{demo.exportsRemaining} exportaciones</strong>
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -413,6 +446,34 @@ function GrowthCharts() {
           </button>
         </div>
       )}
+
+      {/* Upgrade Modal — límite alcanzado */}
+      {isDemo && demo && (
+        <UpgradeModal
+          show={demo.showUpgrade}
+          blockedAction={demo.blockedAction}
+          onClose={() => demo.setShowUpgrade(false)}
+        />
+      )}
+
+      {/* Demo Info Modal — al clickear el badge */}
+      <UpgradeModal
+        show={showDemoInfo}
+        onClose={() => setShowDemoInfo(false)}
+        title="Estás usando la versión demo"
+      />
+
+      <style>{`
+        .demo-badge {
+          background: #EDD5D9;
+          cursor: pointer;
+          transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .demo-badge:hover {
+          box-shadow: var(--shadow-sm);
+          transform: translateY(-1px);
+        }
+      `}</style>
     </div>
   );
 }

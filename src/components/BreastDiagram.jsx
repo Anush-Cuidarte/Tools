@@ -7,10 +7,11 @@ function BreastDiagram({ breast, points, onCanvasClick, onPointClick, onPointHov
   const label = isLeft ? 'IZQUIERDO' : 'DERECHO';
   const viewBox = [0, 0, 200, 230];
 
-  // Círculo perfecto centrado en (105, 100) r≈83, luego estirado en punta superior izquierda/derecha → gota
+  // Círculo perfecto centrado en (105, 100) r≈83, estirado en punta superior izquierda/derecha → gota.
+  // Tip izq: (69,5) — 20% + izq, 5% + arriba. Arco sup-der más redondeado (C120,5 175,54).
   const breastPath = isLeft
-    ? 'M75,10 C110,10 151,54 188,100 C188,146 151,183 105,183 C59,183 22,146 22,100 C22,54 42,24 75,10Z'
-    : 'M125,10 C90,10 49,54 12,100 C12,146 49,183 105,183 C141,183 178,146 178,100 C178,54 158,24 125,10Z';
+    ? 'M69,5 C120,5 175,54 188,100 C188,146 151,183 105,183 C59,183 22,146 22,100 C22,54 40,5 69,5Z'
+    : 'M131,5 C80,5 25,54 12,100 C12,146 49,183 105,183 C141,183 178,146 178,100 C178,54 160,5 131,5Z';
 
   // Areola / nipple — centred in the breast
   const nippleX = isLeft ? 105 : 95;
@@ -64,7 +65,7 @@ function BreastDiagram({ breast, points, onCanvasClick, onPointClick, onPointHov
           />
 
           {/* Nipple */}
-          <circle cx={nippleX} cy={nippleY} r="10" fill="var(--pink)" />
+          <circle cx={nippleX} cy={nippleY} r="15" fill="var(--pink)" />
         </g>
 
         {/* Side label */}

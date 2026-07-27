@@ -1,6 +1,11 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../services/auth';
 
-function Header({ showBack = false }) {
+function Header() {
+  const { user, logout } = useAuth();
+  const location = useLocation();
+  const showBack = location.pathname !== '/';
+
   return (
     <header className="header">
       <div className="container d-flex align-items-center justify-content-between py-3">
@@ -22,6 +27,30 @@ function Header({ showBack = false }) {
             </h1>
           </Link>
         </div>
+
+        <nav className="d-flex align-items-center gap-2">
+          {user ? (
+            <>
+              <Link to="/mi-suscripcion" className="btn-nav" title="Mi Suscripción">
+                <i className="bi bi-credit-card"></i>
+              </Link>
+              <span className="small text-muted d-none d-sm-inline">{user.username}</span>
+              <button className="btn-nav" onClick={logout} title="Cerrar sesión">
+                <i className="bi bi-box-arrow-right"></i>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="btn-nav" title="Iniciar sesión">
+                <i className="bi bi-person"></i>
+              </Link>
+              <Link to="/register" className="btn btn-sm rounded-pill px-3"
+                style={{ background: 'var(--anush-rose)', color: '#fff', border: 'none' }}>
+                Registrarse
+              </Link>
+            </>
+          )}
+        </nav>
       </div>
 
       <style>{`
@@ -59,6 +88,23 @@ function Header({ showBack = false }) {
         .btn-back:hover {
           background: var(--pink);
           color: white;
+        }
+        .btn-nav {
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: none;
+          border-radius: var(--radius-full);
+          background: transparent;
+          color: var(--pink);
+          font-size: 1.2rem;
+          text-decoration: none;
+          transition: background 0.2s;
+        }
+        .btn-nav:hover {
+          background: rgba(201, 123, 132, 0.1);
         }
       `}</style>
     </header>

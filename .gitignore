@@ -2,3 +2,4 @@ node_modules/
 .atl/
 .DS_Store
 *.local
+.env

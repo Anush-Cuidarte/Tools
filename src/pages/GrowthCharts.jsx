@@ -6,7 +6,7 @@ import {
   whoBoysWeight, whoGirlsWeight, PERCENTILE_LABELS, estimatePercentile,
 } from '../data/who-growth';
 import UpgradeModal from '../components/UpgradeModal';
-import useExport from '../hooks/useExport';
+import html2canvas from 'html2canvas';
 import { useAuth } from '../services/auth';
 import { DemoContext } from '../services/demo';
 import api from '../services/api';
@@ -182,9 +182,62 @@ function GrowthCharts() {
     }
     const exportOpts = isDemo ? { demo: true, anonymousId: demo?.deviceId } : {};
     api.registrarExport('growth-charts', exportOpts).catch(() => {});
-    const el = document.getElementById('growth-chart-card');
-    if (el) exportToPng(el, isDemo ? 'curvas-crecimiento-demo' : 'curvas-crecimiento');
-  }, [exportToPng, isDemo, demo]);
+
+    const chartEl = document.getElementById('growth-chart-card');
+    const tableEl = document.getElementById('growth-table-card');
+    if (!chartEl) return;
+
+    // Build a temp wrapper that contains chart + table (cloned)
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:800px;background:#FDF8F5;padding:16px';
+    wrapper.appendChild(chartEl.cloneNode(true));
+    if (tableEl && measurements.length > 0) {
+      const tableClone = tableEl.cloneNode(true);
+      tableClone.style.marginTop = '16px';
+      wrapper.appendChild(tableClone);
+    }
+    document.body.appendChild(wrapper);
+
+    try {
+      const canvas = await html2canvas(wrapper, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#FDF8F5',
+        logging: false,
+      });
+
+      // Build final canvas with branded footer (same as useExport)
+      const FOOTER_HEIGHT = 50;
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = canvas.width;
+      finalCanvas.height = canvas.height + FOOTER_HEIGHT * 2;
+      const ctx = finalCanvas.getContext('2d');
+      ctx.fillStyle = '#FDF8F5';
+      ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+      ctx.drawImage(canvas, 0, 0);
+      const footerY = canvas.height + 1;
+      ctx.strokeStyle = '#E9D5C8';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(20 * 2, footerY);
+      ctx.lineTo(finalCanvas.width - 20 * 2, footerY);
+      ctx.stroke();
+      ctx.fillStyle = '#C97B84';
+      ctx.font = '700 28px "Montserrat", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Anush.Cuidarte Tools', finalCanvas.width / 2, footerY + FOOTER_HEIGHT);
+
+      const link = document.createElement('a');
+      link.download = `${isDemo ? 'curvas-crecimiento-demo' : 'curvas-crecimiento'}.png`;
+      link.href = finalCanvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('Error al exportar:', err);
+    } finally {
+      document.body.removeChild(wrapper);
+    }
+  }, [isDemo, demo, measurements.length]);
 
   const clearAll = () => {
     setMeasurements([]);
@@ -378,7 +431,7 @@ function GrowthCharts() {
 
         {/* Tabla de mediciones */}
         <div className="col-12 col-md-7">
-          <div className="card p-4">
+          <div className="card p-4" id="growth-table-card">
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h5 className="fw-bold mb-0" style={{ color: 'var(--text-dark)' }}>
                 Mediciones registradas

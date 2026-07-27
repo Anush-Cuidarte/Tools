@@ -1,4 +1,4 @@
-import { useRef, useContext, useEffect, useState } from 'react';
+import { useRef, useContext, useEffect, useState, useCallback } from 'react';
 import useGastricCalc from '../hooks/useGastricCalc';
 import UpgradeModal from '../components/UpgradeModal';
 import useExport from '../hooks/useExport';
@@ -106,7 +106,6 @@ function GastricCapacity() {
   } = useGastricCalc();
 
   const resultsRef = useRef(null);
-  const prevHadResultsRef = useRef(false);
   const { exportToPng } = useExport();
   const { user } = useAuth();
   const demo = useContext(DemoContext);
@@ -114,25 +113,33 @@ function GastricCapacity() {
   const [showDemoInfo, setShowDemoInfo] = useState(false);
   const [blockCalcs, setBlockCalcs] = useState(false);
 
-  // ── Consume calculation when resultados first appear ──
+  // ── Debounce: raw input → sync to hook after 500ms idle ──
+  const [rawPesoActualG, setRawPesoActualG] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setPesoActualG(rawPesoActualG), 500);
+    return () => clearTimeout(timer);
+  }, [rawPesoActualG, setPesoActualG]);
+
+  // ── Consume demo calc on EVERY recalculation ──
   const hasResults = resultados !== null;
   const showResults = hasResults && !blockCalcs;
   useEffect(() => {
-    if (hasResults && !prevHadResultsRef.current) {
-      if (isDemo && demo) {
-        const allowed = demo.consumeCalculation('gastric-capacity');
-        if (!allowed) {
-          setBlockCalcs(true);
-        }
+    if (resultados === null) return;
+    if (isDemo && demo) {
+      const allowed = demo.consumeCalculation('gastric-capacity');
+      if (!allowed) {
+        setBlockCalcs(true);
       }
     }
-    prevHadResultsRef.current = hasResults;
-  }, [hasResults, isDemo, demo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultados]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
+    setRawPesoActualG('');
     reset();
     setBlockCalcs(false);
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleExport = async () => {
     if (isDemo && demo && !demo.consumeExport('gastric-capacity')) {
@@ -205,8 +212,8 @@ function GastricCapacity() {
                   type="number"
                   className="form-control"
                   placeholder="Ej: 3250"
-                  value={pesoActualG}
-                  onChange={(e) => setPesoActualG(e.target.value)}
+                  value={rawPesoActualG}
+                  onChange={(e) => setRawPesoActualG(e.target.value)}
                   min="0"
                   step="1"
                 />
@@ -276,9 +283,8 @@ function GastricCapacity() {
 
             <button
               type="button"
-              className="btn btn-outline-secondary w-100 mt-2"
+              className="btn btn-outline-secondary w-100 mt-2 btn-limpiar"
               onClick={handleReset}
-              style={{ borderColor: '#e0e0e0', color: 'var(--text-body)', borderRadius: 'var(--radius-full)' }}
             >
               Limpiar
             </button>
@@ -449,6 +455,16 @@ function GastricCapacity() {
       />
 
       <style>{`
+        .btn-limpiar {
+          border-color: #e0e0e0;
+          color: var(--text-body);
+          border-radius: var(--radius-full);
+        }
+        .btn-limpiar:hover {
+          color: var(--text-body) !important;
+          background: var(--cream) !important;
+          border-color: #d0d0d0 !important;
+        }
         .demo-badge {
           background: #EDD5D9;
           cursor: pointer;

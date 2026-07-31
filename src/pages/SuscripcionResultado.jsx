@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import api from '../services/api';
 
 const MESSAGES = {
   exito: {
@@ -24,6 +26,15 @@ const MESSAGES = {
 export default function SuscripcionResultado() {
   const { tipo } = useParams();
   const msg = MESSAGES[tipo] || MESSAGES.error;
+
+  // Re-verify the subscription status with the backend when returning from MP.
+  // The backend syncs the latest preapproval with MP, so a subscription stuck
+  // on "pending" locally (e.g. missed webhook) gets corrected on arrival.
+  useEffect(() => {
+    if (tipo === 'exito' || tipo === 'pending') {
+      api.miSuscripcion().catch(() => {});
+    }
+  }, [tipo]);
 
   return (
     <div className="container py-5 text-center" style={{ maxWidth: 480 }}>

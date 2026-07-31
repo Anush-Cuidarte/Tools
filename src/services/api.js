@@ -1,4 +1,4 @@
-const API_BASE = 'https://75a8-181-0-140-102.ngrok-free.app/api';
+const API_BASE = 'https://b041-190-31-90-23.ngrok-free.app/api';
 
 class ApiClient {
   constructor() {

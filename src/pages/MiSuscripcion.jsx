@@ -25,7 +25,14 @@ export default function MiSuscripcion() {
     );
   }
 
-  const activeSub = subscriptions.find((s) => s.estado === 'active');
+  const currentSub = subscriptions[0];
+
+  const ESTADO_BADGE = {
+    active: { label: 'Activa', color: 'success' },
+    pending: { label: 'Pendiente', color: 'warning' },
+    cancelled: { label: 'Cancelada', color: 'secondary' },
+    expired: { label: 'Expirada', color: 'secondary' },
+  };
 
   return (
     <div className="container py-4" style={{ maxWidth: 600 }}>
@@ -33,7 +40,7 @@ export default function MiSuscripcion() {
         Mi Suscripción
       </h2>
 
-      {!activeSub && !subscriptions.length && (
+      {!currentSub && (
         <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
           <i className="bi bi-credit-card" style={{ fontSize: '3rem', color: 'var(--anush-rose)' }} />
           <p className="mt-3 text-muted">No tenés ninguna suscripción activa.</p>
@@ -46,31 +53,38 @@ export default function MiSuscripcion() {
         </div>
       )}
 
-      {activeSub && (
+      {currentSub && (
         <div className="card border-0 shadow-sm rounded-4 p-4 mb-3">
           <div className="d-flex justify-content-between align-items-center mb-3">
-            <h5 className="mb-0">{activeSub.plan.name}</h5>
-            <span className="badge bg-success rounded-pill">Activa</span>
+            <h5 className="mb-0">{currentSub.plan.name}</h5>
+            <span className={`badge bg-${ESTADO_BADGE[currentSub.estado]?.color || 'secondary'} rounded-pill`}>
+              {ESTADO_BADGE[currentSub.estado]?.label || currentSub.estado}
+            </span>
           </div>
-          <p className="small text-muted mb-2">{activeSub.plan.description}</p>
+          <p className="small text-muted mb-2">{currentSub.plan.description}</p>
           <hr />
           <div className="row small">
             <div className="col-6">
               <span className="text-muted">Inicio:</span>{' '}
-              {new Date(activeSub.start_date).toLocaleDateString('es-AR')}
+              {new Date(currentSub.start_date).toLocaleDateString('es-AR')}
             </div>
             <div className="col-6">
               <span className="text-muted">Expira:</span>{' '}
-              {activeSub.end_date
-                ? new Date(activeSub.end_date).toLocaleDateString('es-AR')
+              {currentSub.end_date
+                ? new Date(currentSub.end_date).toLocaleDateString('es-AR')
                 : '—'}
             </div>
           </div>
+          {currentSub.estado === 'pending' && (
+            <p className="small text-muted mt-3 mb-0">
+              Tu suscripción está pendiente de aprobación en Mercado Pago. Si ya la autorizaste, puede tardar unos minutos en activarse.
+            </p>
+          )}
         </div>
       )}
 
       {/* Demo info */}
-      {userInfo?.is_demo_user && !activeSub && (
+      {userInfo?.is_demo_user && !currentSub && (
         <div className="card border-0 shadow-sm rounded-4 p-4" style={{ backgroundColor: '#FDF8F5' }}>
           <h6 className="mb-0" style={{ color: 'var(--anush-brown)' }}>
             <i className="bi bi-star-fill me-1" />

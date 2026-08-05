@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 import { useAuth } from '../services/auth';
+import { authUrl } from '../services/api';
 
 export default function Login() {
   const [form, setForm] = useState({ username: '', password: '' });
@@ -42,6 +44,14 @@ export default function Login() {
           </div>
         )}
 
+        <GoogleLoginButton />
+
+        <div className="d-flex align-items-center my-3">
+          <div className="flex-grow-1" style={{ height: 1, background: '#e5d5d5' }}></div>
+          <span className="text-muted small px-3">o</span>
+          <div className="flex-grow-1" style={{ height: 1, background: '#e5d5d5' }}></div>
+        </div>
+
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label htmlFor="username" className="form-label small">
@@ -82,6 +92,12 @@ export default function Login() {
         </form>
 
         <p className="text-center mt-3 mb-0 small">
+          <a href={authUrl('accounts/password/reset/')} className="text-decoration-none" style={{ color: 'var(--anush-rose)' }}>
+            ¿Olvidaste tu contraseña?
+          </a>
+        </p>
+
+        <p className="text-center mt-2 mb-0 small">
           ¿No tenés cuenta?{' '}
           <Link to="/register" style={{ color: 'var(--anush-rose)' }}>
             Registrate

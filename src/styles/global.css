@@ -133,3 +133,15 @@ img {
   transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(201,123,132,0.5);
 }
+
+/* ========== GOOGLE LOGIN ========== */
+.google-login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.google-login .g_id_signin,
+.google-login .g_id_signin > div {
+  width: 100% !important;
+}

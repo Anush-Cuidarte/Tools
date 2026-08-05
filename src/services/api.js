@@ -44,7 +44,9 @@ class ApiClient {
     if (!res.ok) {
       const msg =
         data.error || data.detail || Object.values(data).flat().join(', ') || 'Error de red';
-      throw new Error(msg);
+      const err = new Error(msg);
+      if (data.code) err.code = data.code;
+      throw err;
     }
 
     return data;
@@ -63,6 +65,13 @@ class ApiClient {
     return this.request('/auth/login/', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
+    });
+  }
+
+  googleLogin(idToken) {
+    return this.request('/auth/google/', {
+      method: 'POST',
+      body: JSON.stringify({ id_token: idToken }),
     });
   }
 
@@ -134,4 +143,13 @@ class ApiClient {
 }
 
 export const api = new ApiClient();
+
+/**
+ * Build an absolute URL on the backend host (e.g. allauth pages like the
+ * password reset form), which lives on a different origin than this SPA.
+ */
+export function authUrl(path = '') {
+  return new URL(path, new URL('../', API_BASE)).href;
+}
+
 export default api;

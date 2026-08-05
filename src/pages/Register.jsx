@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 import { useAuth } from '../services/auth';
 
 export default function Register() {
@@ -10,6 +11,7 @@ export default function Register() {
     password2: '',
   });
   const [error, setError] = useState('');
+  const [emailHasGoogle, setEmailHasGoogle] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -17,6 +19,7 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setEmailHasGoogle(false);
 
     if (form.password !== form.password2) {
       setError('Las contraseñas no coinciden.');
@@ -29,6 +32,7 @@ export default function Register() {
       navigate('/', { replace: true });
     } catch (err) {
       setError(err.message);
+      setEmailHasGoogle(err.code === 'google_account_exists');
     } finally {
       setLoading(false);
     }
@@ -47,8 +51,23 @@ export default function Register() {
         {error && (
           <div className="alert alert-danger py-2 small" role="alert">
             {error}
+            {emailHasGoogle && (
+              <div className="mt-1">
+                <Link to="/login" style={{ color: 'var(--anush-rose)' }}>
+                  Iniciar sesión
+                </Link>
+              </div>
+            )}
           </div>
         )}
+
+        <GoogleLoginButton />
+
+        <div className="d-flex align-items-center my-3">
+          <div className="flex-grow-1" style={{ height: 1, background: '#e5d5d5' }}></div>
+          <span className="text-muted small px-3">o</span>
+          <div className="flex-grow-1" style={{ height: 1, background: '#e5d5d5' }}></div>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">

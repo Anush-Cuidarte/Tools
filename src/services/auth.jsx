@@ -65,6 +65,16 @@ export function AuthProvider({ children }) {
     return result;
   };
 
+  const googleLogin = useCallback(async (idToken) => {
+    const result = await api.googleLogin(idToken);
+    api.setToken(result.token);
+    setUser(result.user);
+    setProfile(result.profile);
+    const info = await api.userInfo();
+    setUserInfo(info);
+    return result;
+  }, []);
+
   const logout = () => {
     api.clearToken();
     setUser(null);
@@ -73,7 +83,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, userInfo, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, profile, userInfo, login, register, googleLogin, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

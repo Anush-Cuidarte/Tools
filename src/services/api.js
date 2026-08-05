@@ -1,4 +1,4 @@
-const API_BASE = 'https://b041-190-31-90-23.ngrok-free.app/api';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 class ApiClient {
   constructor() {

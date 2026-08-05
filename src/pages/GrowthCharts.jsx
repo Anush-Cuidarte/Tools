@@ -88,15 +88,55 @@ function renderLegend(props) {
   );
 }
 
-const MONTH = 30.4375; // average days per month (365.25 / 12)
-
 function daysBetween(a, b) {
   return Math.round((b - a) / (1000 * 60 * 60 * 24));
 }
 
+// Calendar-based age: whole months are counted by month boundary, so
+// 7/10 -> 7/12 is exactly 2 months no matter how long those months are.
+function getCalendarAge(birth, meas) {
+  let years = meas.getFullYear() - birth.getFullYear();
+  let months = meas.getMonth() - birth.getMonth();
+  let days = meas.getDate() - birth.getDate();
+
+  if (days < 0) {
+    months -= 1;
+    // Days of the month right before the measurement month (the month
+    // where the last monthly anniversary fell).
+    const daysInPrevMonth = new Date(meas.getFullYear(), meas.getMonth(), 0).getDate();
+    days += daysInPrevMonth;
+  }
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+  return { years, months, days };
+}
+
+// Decimal months for the chart X axis: whole calendar months + the leftover
+// days as a fraction of the REAL month the child is currently in (the month
+// between the last monthly anniversary and the next one). A same-day
+// anniversary lands exactly on an integer, aligning with the official WHO
+// curve points. No average day count involved.
 function dateToAgeMonths(birth, meas) {
-  const totalDays = daysBetween(birth, meas);
-  return totalDays / MONTH;
+  const age = getCalendarAge(birth, meas);
+  const wholeMonths = age.years * 12 + age.months;
+  if (age.days === 0) return wholeMonths;
+
+  // The leftover days count from the last monthly anniversary, which fell in
+  // the measurement month (if meas day >= birth day) or in the month before
+  // it (otherwise). Divide by that month's real length, not an average.
+  const annivMonthIndex = meas.getMonth() - (meas.getDate() >= birth.getDate() ? 0 : 1);
+  const daysInMonth = new Date(meas.getFullYear(), annivMonthIndex + 1, 0).getDate();
+  return wholeMonths + age.days / daysInMonth;
+}
+
+function formatCalendarAge(age) {
+  const totalMonths = age.years * 12 + age.months;
+  if (totalMonths === 0 && age.days === 0) return '0 meses';
+  if (totalMonths === 0) return `${age.days} días`;
+  if (age.days === 0) return `${totalMonths} ${totalMonths === 1 ? 'mes' : 'meses'}`;
+  return `${totalMonths} ${totalMonths === 1 ? 'mes' : 'meses'}, ${age.days} días`;
 }
 
 function formatDateLocal(dateStr) {
@@ -139,6 +179,18 @@ function GrowthCharts() {
     return data.sort((a, b) => a.month - b.month);
   }, [gender, measurements]);
 
+  // Highest value across all curves + baby measurements, for the Y domain
+  const chartMaxY = useMemo(() => {
+    let max = 0;
+    chartData.forEach(row => {
+      PERCENTILE_LABELS.forEach(p => {
+        if (typeof row[p] === 'number' && row[p] > max) max = row[p];
+      });
+      if (typeof row.babyWeight === 'number' && row.babyWeight > max) max = row.babyWeight;
+    });
+    return Math.ceil(max);
+  }, [chartData]);
+
   const addMeasurement = () => {
     if (isDemo && demo && !demo.consumeCalculation('growth-charts')) {
       return;
@@ -156,6 +208,7 @@ function GrowthCharts() {
 
     const ageMonths = dateToAgeMonths(birth, meas);
     const ageDays = daysBetween(birth, meas);
+    const calendarAge = getCalendarAge(birth, meas);
 
     setMeasurements(prev => {
       const updated = [...prev, {
@@ -164,6 +217,7 @@ function GrowthCharts() {
         id: Date.now(),
         ageMonths,
         ageDays,
+        calendarAge,
       }];
       return updated.sort((a, b) => a.ageMonths - b.ageMonths);
     });
@@ -296,17 +350,19 @@ function GrowthCharts() {
             <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
+                type="number"
                 dataKey="month"
                 label={{ value: 'Edad (meses)', position: 'insideBottom', offset: -5, style: { fontSize: 12, fill: '#999' } }}
                 tick={{ fontSize: 11, fill: '#999' }}
                 domain={[0, 24]}
-                ticks={[0, 2, 4, 6, 9, 12, 15, 18, 21, 24]}
+                ticks={Array.from({ length: 25 }, (_, i) => i)}
                 allowDataOverflow={false}
               />
               <YAxis
                 label={{ value: 'Peso (kg)', angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: '#999' } }}
                 tick={{ fontSize: 11, fill: '#999' }}
-                domain={[0, 'auto']}
+                domain={[0, chartMaxY]}
+                ticks={Array.from({ length: chartMaxY + 1 }, (_, i) => i)}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={renderLegend} />
@@ -477,7 +533,7 @@ function GrowthCharts() {
                       return (
                         <tr key={m.id} style={{ borderBottom: '1px solid var(--cream)' }}>
                           <td className="text-muted" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>{formatDateLocal(m.date)}</td>
-                          <td className="fw-semibold">{formatAge(m.ageMonths)}</td>
+                          <td className="fw-semibold">{formatCalendarAge(m.calendarAge)}</td>
                           <td className="fw-semibold">{m.weight.toFixed(2)}</td>
                           <td>
                             <span
